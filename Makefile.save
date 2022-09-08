@@ -7,24 +7,22 @@ all : makecapk.apk
 
 # WARNING WARNING WARNING!  YOU ABSOLUTELY MUST OVERRIDE THE PROJECT NAME
 # you should also override these parameters, get your own signatre file and make your own manifest.
-APPNAME?=Drone_control
+APPNAME?=cnfgtest
 LABEL?=$(APPNAME)
 APKFILE ?= $(APPNAME).apk
 PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
-SRC?=drone_control.c 
-NETSRC?=net_com.c
-GUISRC?=GUI.c
+SRC?=test.c
 
 #We've tested it with android version 22, 24, 28, 29 and 30.
 #You can target something like Android 28, but if you set ANDROIDVERSION to say 22, then
 #Your app should (though not necessarily) support all the way back to Android 22. 
-ANDROIDVERSION?=30
+ANDROIDVERSION?=28
 ANDROIDTARGET?=$(ANDROIDVERSION)
 #Default is to be strip down, but your app can override it.
-CFLAGS?=-ggdb -ffunction-sections -O0 -fdata-sections -Wall -fvisibility=hidden
-LDFLAGS?=-Wl,--gc-sections
+CFLAGS?=-ffunction-sections -Os -fdata-sections -Wall -fvisibility=hidden
+LDFLAGS?=-Wl,--gc-sections -s
 ANDROID_FULLSCREEN?=y
 ADB?=adb
 UNAME := $(shell uname)
@@ -33,7 +31,7 @@ UNAME := $(shell uname)
 
 
 
-ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS) $(NETSRC) $(GUISRC)
+ANDROIDSRCS:= $(SRC) $(RAWDRAWANDROIDSRCS)
 
 #if you have a custom Android Home location you can add it to this list.  
 #This makefile will select the first present folder.
@@ -79,12 +77,12 @@ testsdk :
 	@echo "NDK:\t\t" $(NDK)
 	@echo "Build Tools:\t" $(BUILD_TOOLS)
 
-CFLAGS+=-O0 -DANDROID -DAPPNAME=\"$(APPNAME)\"
+CFLAGS+=-Os -DANDROID -DAPPNAME=\"$(APPNAME)\"
 ifeq (ANDROID_FULLSCREEN,y)
 CFLAGS +=-DANDROID_FULLSCREEN
 endif
 CFLAGS+= -I$(RAWDRAWANDROID)/rawdraw -I$(NDK)/sysroot/usr/include -I$(NDK)/sysroot/usr/include/android -I$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/include/android -fPIC -I$(RAWDRAWANDROID) -DANDROIDVERSION=$(ANDROIDVERSION)
-LDFLAGS += -ljnigraphics -lm -lGLESv3 -lEGL -landroid -llog -fcommon
+LDFLAGS += -lm -lGLESv3 -lEGL -landroid -llog
 LDFLAGS += -shared -uANativeActivity_onCreate
 
 CC_ARM64:=$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/bin/aarch64-linux-android$(ANDROIDVERSION)-clang
@@ -121,19 +119,19 @@ folders:
 
 makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/arm64-v8a
-	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.Drone_control -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-arm64/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
+	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 makecapk/lib/armeabi-v7a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/armeabi-v7a
-	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM32) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.Drone_control -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-arm/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/arm-linux-androideabi/$(ANDROIDVERSION) $(LDFLAGS)
+	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM32) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/arm-linux-androideabi/$(ANDROIDVERSION) $(LDFLAGS)
 
 makecapk/lib/x86/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/x86
-	$(CC_x86) $(CFLAGS) $(CFLAGS_x86) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.Drone_control -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-x86/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/i686-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
+	$(CC_x86) $(CFLAGS) $(CFLAGS_x86) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/i686-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/x86_64
-	$(CC_x86) $(CFLAGS) $(CFLAGS_x86_64) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.Drone_control -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-x86_64/usr/lib64/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/x86_64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
+	$(CC_x86) $(CFLAGS) $(CFLAGS_x86_64) -o $@ $^ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/x86_64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 #We're really cutting corners.  You should probably use resource files.. Replace android:label="@string/app_name" and add a resource file.
 #Then do this -S Sources/res on the aapt line.
