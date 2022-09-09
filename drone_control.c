@@ -19,7 +19,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define MAXPACKETSIZE 57600
+#define MAXIMAGESIZE 57600
 
 #define DEBUG
 
@@ -88,8 +88,8 @@ int main()
 	
 	vsp.start_image = false, vsp.data_image = false, vsp.end_image = false;
 	vsp.image_size = 0, vsp.data_size = 0;
-	image_data = (uint32_t *)malloc( sizeof(uint32_t ) * MAXPACKETSIZE);
-	memset(image_data, 0, sizeof(uint32_t ) * MAXPACKETSIZE);
+	image_data = (uint32_t *)malloc( sizeof(uint32_t ) * MAXIMAGESIZE);
+	memset(image_data, 0, sizeof(uint32_t ) * MAXIMAGESIZE);
 	
 	server_con sc[2];
 	memset(sc[0].ip, 0, 16);
@@ -162,7 +162,7 @@ int main()
 	{
 			
 		// net code here
-		if(first_run)
+/*		if(first_run)
 		{
 
 			for(c = 0; c < 2; c++)
@@ -219,24 +219,33 @@ int main()
 							
 							if(vsp.end_image)	// are we done with image?
 							{
-								/*	Test image write code
+*/
+								/*	Test image write code */
 								FILE *image_file;
 								
-								image_file = fopen("/data/data/org.yourorg.Drone_control/testimage.jpg", "wb");
+								image_file = fopen("testimage.jpg", "rb");
 								if(image_file)
 								{
+									/*
 									if(fwrite(image_data, current_size * 4, 1, image_file))
 									{
 										printf("Wrote to image file.\n");
 									}else{
 										printf("Failed to write to image file!\n");
 									}
+									*/
+									int size;
+									
+									fseek(image_file, 0, SEEK_END);
+									size = ftell(image_file);
+									
+									if(fread(image_data, 1, size, image_file) != size)
+										printf("failed to read image file!\n");
 									
 								}else{
 									printf("Failed to create file!\n");
-									perror("/data/data/org.yourorg.Drone_control/testimage.jpg");
-								}
-								*/								
+									perror("testimage.jpg");
+								}							
 								
 								if(stbi_info_from_memory((stbi_uc	const *)image_data, current_size * 4, &imgWidth, &imgHeight, &n))
 								{
@@ -290,16 +299,16 @@ int main()
 								
 								incoming_size = 0;
 								
-								//memset(image_data, 0, sizeof(uint32_t) * MAXPACKETSIZE);
+								//memset(image_data, 0, sizeof(uint32_t) * MAXIMAGESIZE);
 								printf("finished image...\n");
-							}
-								
+							//}
+/*								
 							if(vsp.start_image)	// start new image incoming?
 							{
 								printf("Starting new image...\n");
 								current_size = vsp.data_size;
 								
-								memset(image_data, 0, sizeof(uint32_t ) * MAXPACKETSIZE);		
+								memset(image_data, 0, sizeof(uint32_t ) * MAXIMAGESIZE);		
 							}
 							
 							if(vsp.data_image)	// is this image data?
@@ -320,6 +329,7 @@ int main()
 				}
 			}
 		}
+*/
 /*
 		if(!(sc[0].s < 0) && !(sc[1].s < 0)) // we are only writing to the first connection
 		{
@@ -383,12 +393,6 @@ int main()
 		{
 			// unsigned char simpleImage[] = {255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255};
 			CNFGBlitImage(current_image, (screenx/2) - (imgWidth/2), (screeny/2) - (imgHeight/2), imgWidth, imgHeight, 4);
-			// UpdateScreenWithBitmapOffsetX = (screenx/2) - (imgWidth/2);
-			// UpdateScreenWithBitmapOffsetY = (screeny/2) - (imgHeight/2);
-			// CNFGUpdateScreenWithBitmap(image_data, imgWidth, imgHeight);
-			// GLuint tex =(GLuint ) CNFGTexImage(image_data, imgWidth, imgHeight);
-			// CNFGBlitTex((unsigned int)tex, (screenx/2) - (imgWidth/2), (screeny/2) - (imgHeight/2),imgWidth, imgHeight);
-			// free(image_buffer);
 		}
 
 		CNFGSwapBuffers();

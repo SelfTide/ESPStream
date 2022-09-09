@@ -96,8 +96,8 @@ AAPT:=$(BUILD_TOOLS)/aapt
 # Which binaries to build? Just comment/uncomment these lines:
 TARGETS += makecapk/lib/arm64-v8a/lib$(APPNAME).so
 TARGETS += makecapk/lib/armeabi-v7a/lib$(APPNAME).so
-#TARGETS += makecapk/lib/x86/lib$(APPNAME).so
-#TARGETS += makecapk/lib/x86_64/lib$(APPNAME).so
+TARGETS += makecapk/lib/x86/lib$(APPNAME).so
+TARGETS += makecapk/lib/x86_64/lib$(APPNAME).so
 
 CFLAGS_ARM64:=-m64
 CFLAGS_ARM32:=-mfloat-abi=softfp -m32
@@ -118,7 +118,7 @@ folders:
 	mkdir -p makecapk/lib/armeabi-v7a
 	mkdir -p makecapk/lib/x86
 	mkdir -p makecapk/lib/x86_64
-
+#there are hard wired paths writen in here please edit as nessary.
 makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/arm64-v8a
 	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.Drone_control -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-arm64/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
