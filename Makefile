@@ -7,14 +7,14 @@ all : makecapk.apk
 
 # WARNING WARNING WARNING!  YOU ABSOLUTELY MUST OVERRIDE THE PROJECT NAME
 # you should also override these parameters, get your own signatre file and make your own manifest.
-APPNAME?=Drone_control
+APPNAME?=ESPStream
 LABEL?=$(APPNAME)
 APKFILE ?= $(APPNAME).apk
 PACKAGENAME?=org.yourorg.$(APPNAME)
 RAWDRAWANDROID?=.
 RAWDRAWANDROIDSRCS=$(RAWDRAWANDROID)/android_native_app_glue.c
-SRC?=drone_control.c 
-NETSRC?=net_com.c
+SRC?=ESPStream_test.c 
+NETSRC?=ESPStream.c
 GUISRC?=GUI.c
 
 #We've tested it with android version 22, 24, 28, 29 and 30.
@@ -121,19 +121,19 @@ folders:
 #there are hard wired paths writen in here please edit as nessary.
 makecapk/lib/arm64-v8a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/arm64-v8a
-	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.Drone_control -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-arm64/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
+	$(CC_ARM64) $(CFLAGS) $(CFLAGS_ARM64) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.ESPStream -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-arm64/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/aarch64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 makecapk/lib/armeabi-v7a/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/armeabi-v7a
-	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM32) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.Drone_control -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-arm/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/arm-linux-androideabi/$(ANDROIDVERSION) $(LDFLAGS)
+	$(CC_ARM32) $(CFLAGS) $(CFLAGS_ARM32) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.ESPStream -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-arm/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/arm-linux-androideabi/$(ANDROIDVERSION) $(LDFLAGS)
 
 makecapk/lib/x86/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/x86
-	$(CC_x86) $(CFLAGS) $(CFLAGS_x86) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.Drone_control -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-x86/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/i686-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
+	$(CC_x86) $(CFLAGS) $(CFLAGS_x86) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.ESPStream -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-x86/usr/lib/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/i686-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 makecapk/lib/x86_64/lib$(APPNAME).so : $(ANDROIDSRCS)
 	mkdir -p makecapk/lib/x86_64
-	$(CC_x86) $(CFLAGS) $(CFLAGS_x86_64) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.Drone_control -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-x86_64/usr/lib64/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/x86_64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
+	$(CC_x86) $(CFLAGS) $(CFLAGS_x86_64) -o $@ $^ -Wl,-rpath,/data/data/org.yourorg.ESPStream -L/home/mongoose/android-sdk/ndk/21.3.6528147/platforms/android-30/arch-x86_64/usr/lib64/ -L$(NDK)/toolchains/llvm/prebuilt/$(OS_NAME)/sysroot/usr/lib/x86_64-linux-android/$(ANDROIDVERSION) $(LDFLAGS)
 
 #We're really cutting corners.  You should probably use resource files.. Replace android:label="@string/app_name" and add a resource file.
 #Then do this -S Sources/res on the aapt line.
