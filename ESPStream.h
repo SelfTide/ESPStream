@@ -22,7 +22,20 @@ typedef struct {
 	bool connected;
 }server_con;
 
+typedef struct {
+	bool start_image, data_image, end_image;
+	int image_size, data_size;
+}video_stream_packet_state;
+
+typedef struct {
+    int last_pos;
+    void *context;
+} custom_stbi_mem_context;
+
 int build_fd_sets(int socket, fd_set *read_fds, fd_set *write_fds);
 int connect_serv (server_con *sc);
+server_con espstream_init(char *ip_address, uint8_t port);
+uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int *size);
+void espstream_cleanup();
 
 #endif
