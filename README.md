@@ -20,3 +20,10 @@ ESPStream root folder:
   There are a few hardcoded path's in the makefile that should be change to reflect your NDK file path to point to needed include files and libraries.
   
   *need to fix this*
+  
+  # TODO:
+  
+  - Resolution control for camera's
+  - Image capture input to write current image to storage
+  - encryption for image trasmission.
+  - more to follow
