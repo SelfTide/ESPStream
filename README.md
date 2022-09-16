@@ -26,4 +26,8 @@ ESPStream root folder:
   - Resolution control for camera's
   - Image capture input to write current image to storage
   - encryption for image trasmission.
-  - more to follow
+  - multi-platform
+# current:
+This project in it's current state is a Proof of Concept for using a SPI interface ArduCam to work with ESP32 proto-type boards.
+
+Currently the resolution is set for 320x240 with a whooping 3-ish or so frames per-second.
