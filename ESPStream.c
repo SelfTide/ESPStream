@@ -19,7 +19,7 @@
  *	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
  
-#include "net_com.h"
+#include "ESPStream.h"
 
 #ifdef __clang__
 #define STBIDEF static inline
@@ -60,6 +60,16 @@ int build_fd_sets(int socket, fd_set *read_fds, fd_set *write_fds)
   return 0;
 }
 
+/* ???
+typedef struct {
+	int client_s, port;
+	char ip[16];
+	struct timeval tv;
+	struct sockaddr_in server;
+	bool connected;
+}client; 
+*/
+
 int connect_serv (server_con *sc)
 {
 	
@@ -68,7 +78,7 @@ int connect_serv (server_con *sc)
 	//Create a socket
 	sc->server.sin_addr.s_addr = inet_addr(sc->ip);
 	sc->server.sin_family = AF_INET;
-	//inet_pton(AF_INET, "192.168.0.22", &server.sin_addr);
+	//inet_pton(AF_INET, "192.168.0.252", &server.sin_addr);
 	sc->server.sin_port = htons(sc->port);
 
 	sc->s = socket(AF_INET , SOCK_STREAM , 0 );
@@ -116,7 +126,7 @@ static void write2memory(void *context, void *data, int size)
 server_con espstream_init(char *ip_address, uint8_t port)
 {
 	vsps.start_image = false, vsps.data_image = false, vsps.end_image = false;
-	vsps.image_size = 0, vsps.data_size = 0;
+	vsps.image_size = 0;
 	image_data = (uint32_t *)malloc( sizeof(uint32_t ) * MAXIMAGESIZE);
 	memset(image_data, 0, sizeof(uint32_t ) * MAXIMAGESIZE);
 	
@@ -134,7 +144,7 @@ server_con espstream_init(char *ip_address, uint8_t port)
 	return sc;
 }
 
-// returns image data from stream or NULL on error, width, height, and size are passed into be populated.
+// returns image data from stream or NULL on error, width, height, and size are passed in to be populated.
 uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int *size)
 {
 	int n, action;
@@ -149,6 +159,7 @@ uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int
 		{
 
 			printf("Connected to video stream server.\n"); // 0: video stream connection 1: control stream
+			send(sc->s, "start", 5, MSG_DONTWAIT);
 			sc->connected = true;
 		
 		}else{
@@ -186,9 +197,9 @@ uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int
 				if(FD_ISSET(sc->s, &read_fds))	// got data on video connection
 				{
 					memset((void *)&vsps, 0, sizeof( video_stream_packet_state));
-					if((action = recv(sc->s, &vsps, sizeof( video_stream_packet_state), 0)) > 0)
+					if((action = read(sc->s, &vsps, sizeof( video_stream_packet_state))) > 0)
 					{
-						printf("Size of recv: %d\n", action);
+						printf("Size of recv: %d %d\n", action, (int )sizeof( video_stream_packet_state));
 						
 						if(vsps.end_image)	// are we done with image?
 						{
@@ -196,7 +207,7 @@ uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int
 							/*	Test image write code - just leaving this here for debug reasons
 							FILE *image_file;
 							
-							image_file = fopen("testimage.jpg", "rb");
+							image_file = fopen("/data/data/org.yourorg.ESPStream/testimage.jpg", "w+b");
 							if(image_file)
 							{
 								
@@ -218,7 +229,7 @@ uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int
 							}else{
 								printf("Failed to create file!\n");
 								perror("testimage.jpg");
-							}							
+							}
 							*/
 							
 							if(stbi_info_from_memory((stbi_uc	const *)image_data, current_size * 4, imgWidth, imgHeight, &n))
@@ -244,13 +255,13 @@ uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int
 									{
 							
 										printf("Wrote image to memory...\n");
-										current_size = (context.last_pos / sizeof(uint32_t)) - 35;
+										current_size = (context.last_pos / sizeof(uint32_t)) - 35; // this is supposed to compinsate for junk data
 								
 										if(current_image == NULL)
 										{
 											current_image = (uint32_t *)malloc(sizeof(uint32_t) * current_size);
 											memset(current_image, 0, sizeof(uint32_t) * current_size);
-											memcpy(current_image, &image_data[35], sizeof(uint32_t) * current_size);
+											memcpy(current_image, &image_data[35], sizeof(uint32_t) * current_size); // start where junk data ends?
 											*size = sizeof(uint32_t) * current_size; // number of bytes
 										}
 									}else{
@@ -277,8 +288,8 @@ uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int
 							
 						if(vsps.start_image)	// start new image incoming?
 						{
-							printf("Starting new image...\n");
-							current_size = vsps.data_size;
+							printf("Starting new image... size: %d\n", vsps.image_size);
+							current_size = vsps.image_size / 4;
 							
 							memset(image_data, 0, sizeof(uint32_t ) * MAXIMAGESIZE);		
 						}
@@ -288,12 +299,12 @@ uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int
 							printf("Getting image data...\n");
 							if(FD_ISSET(sc->s, &read_fds))	// got data on video connection
 							{
-								if((action = recv(sc->s, image_data, sizeof( uint32_t) * vsps.data_size, MSG_WAITALL)) < 0) // recive image data
+								if((action = recv(sc->s, image_data, current_size * 4, MSG_WAITALL)) < 0) // recive image data
 								{
 									printf("Error reciving image_data...\n");
 									return NULL;
 								}else{
-									printf("Recived image data! Size: %d\n", action);
+									printf("Recived image data! expected size: %d recived Size: %d\n", current_size * 4, action);
 								}
 							}
 						}
