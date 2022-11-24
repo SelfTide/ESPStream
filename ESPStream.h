@@ -10,6 +10,7 @@
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <sys/time.h>	// FD_SET, FD_ISSET, FD_ZERO macros
+#include <unistd.h>
 
 extern fd_set read_fds, write_fds;
 extern int maxfds;
@@ -24,7 +25,7 @@ typedef struct {
 
 typedef struct {
 	bool start_image, data_image, end_image;
-	int image_size, data_size;
+	int image_size;
 }video_stream_packet_state;
 
 typedef struct {

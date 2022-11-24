@@ -3,7 +3,7 @@
 // that apply to said project apply here where applicable.
 
 #include "GUI.h"
-#include "net_com.h"
+#include "ESPStream.h"
 #include "timer_sleep.h"
 
 // Make sure to only do one CNFG_IMPLEMENTATION or you will have mulitiple definitions which will cause a linker error, you've been warned
@@ -48,7 +48,7 @@ int main()
 
 	// Setup our network connection
 	server_con sc;
-	sc = espstream_init( "192.168.0.9", 89);
+	sc = espstream_init( "192.168.0.19", 89);
 	
 	// we need some different permissions ;)
 	int hasperm;
