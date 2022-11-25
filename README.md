@@ -31,4 +31,13 @@ ESPStream root folder:
 This project in it's current state is a Proof of Concept for using a SPI interface ArduCam to work with ESP32 proto-type boards.
 
 11/24/2022:
-Switched from Arduino build to using ESP-IDF build. Now getting upwards of 15 FPS.
+
+Switched from Arduino build to ESP-IDF build. 
+
+Multi-threading is being used for camera function and network function.
+
+Added C wrapper functions to arducam_esp component.
+
+Fixed frequency issue with `interface_spi.c` set manually to 6Mhz.
+
+Now getting upwards of 15 FPS.
