@@ -65,23 +65,23 @@ static int64_t eclipse_time_ms(bool startend)
 
 void OV2640_valid_check()
 {
-    //Check if the ArduCAM SPI bus is OK
+	//Check if the ArduCAM SPI bus is OK
 	ArduCAM_write_reg(myCAM, ARDUCHIP_TEST1, 0x55);
-    uint8_t temp = ArduCAM_read_reg(myCAM, ARDUCHIP_TEST1);
-    if (temp != 0x55)
-    	ESP_LOGE(TAG, "SPI: interface Error 0x%2x!\n", temp);
-    else
-    	ESP_LOGI(TAG, "SPI: interface OK: %x\n", temp);
+	uint8_t temp = ArduCAM_read_reg(myCAM, ARDUCHIP_TEST1);
+	if (temp != 0x55)
+		ESP_LOGE(TAG, "SPI: interface Error 0x%2x!\n", temp);
+	else
+		ESP_LOGI(TAG, "SPI: interface OK: %x\n", temp);
 
-    //Check if the camera module type is OV2640
-    uint8_t vid, pid;
-    ArduCAM_wrSensorReg8_8(myCAM, 0xff, 0x01);
-    ArduCAM_rdSensorReg8_8(myCAM, OV2640_CHIPID_HIGH, &vid);
-    ArduCAM_rdSensorReg8_8(myCAM, OV2640_CHIPID_LOW, &pid);
-    if ((vid != 0x26) && ((pid != 0x41) || (pid != 0x42)))
-    	ESP_LOGE(TAG, "I2C: Can't find OV2640 module!\n");
-    else
-    	ESP_LOGI(TAG, "I2C: OV2640 detected.\n");
+	//Check if the camera module type is OV2640
+	uint8_t vid, pid;
+	ArduCAM_wrSensorReg8_8(myCAM, 0xff, 0x01);
+	ArduCAM_rdSensorReg8_8(myCAM, OV2640_CHIPID_HIGH, &vid);
+	ArduCAM_rdSensorReg8_8(myCAM, OV2640_CHIPID_LOW, &pid);
+	if ((vid != 0x26) && ((pid != 0x41) || (pid != 0x42)))
+		ESP_LOGE(TAG, "I2C: Can't find OV2640 module!\n");
+	else
+		ESP_LOGI(TAG, "I2C: OV2640 detected.\n");
 }
 
 void capture_one_frame()
@@ -91,9 +91,7 @@ void capture_one_frame()
     ArduCAM_clear_fifo_flag(myCAM);
     ArduCAM_start_capture(myCAM);
     eclipse_time_ms(false);
-    //uint8_t temp;
-	//temp = ArduCAM_get_bit(myCAM, ARDUCHIP_TRIG, CAP_DONE_MASK);
-	//ESP_LOGI(TAG, "ArduCAM get bit: %d", temp);
+
     while (!(ArduCAM_get_bit(myCAM, ARDUCHIP_TRIG, CAP_DONE_MASK))) taskYIELD();
     //		 vTaskDelay(pdMS_TO_TICKS(2));
     ESP_LOGI(TAG, "capture total_time used (in miliseconds): %lld\n", eclipse_time_ms(true));

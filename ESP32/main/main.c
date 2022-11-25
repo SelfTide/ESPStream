@@ -43,33 +43,33 @@ void app_main(void)
 	assert(pthread_cond_init(&cond, NULL) == 0);
 
 	ESP_ERROR_CHECK(start_wifi());
-    ESP_ERROR_CHECK(i2c_master_init());
-    ESP_ERROR_CHECK(spi_master_init());
+	ESP_ERROR_CHECK(i2c_master_init());
+	ESP_ERROR_CHECK(spi_master_init());
 
-    ESP_LOGI("MAIN", "Size of vsps: %d", sizeof(video_stream_packet_state));
-	
+	ESP_LOGI("MAIN", "Size of vsps: %d", sizeof(video_stream_packet_state));
+
 	ArduCAM_write_reg(myCAM, 0x07, 0x80);
 	vTaskDelay(pdMS_TO_TICKS(100));
 	ArduCAM_write_reg(myCAM, 0x07, 0x00);
 	vTaskDelay(pdMS_TO_TICKS(100));
-    
+
 	OV2640_valid_check();
-    ESP_LOGI("ArduCAM", "Initializing Camera...\n");	// setup camera for use, these are important
-    ArduCAM_set_format(myCAM, JPEG);
-    ArduCAM_OV2640_InitCAM(myCAM);
-    ArduCAM_OV2640_set_JPEG_size(myCAM, OV2640_320x240);
+	ESP_LOGI("ArduCAM", "Initializing Camera...\n");	// setup camera for use, these are important
+	ArduCAM_set_format(myCAM, JPEG);
+	ArduCAM_OV2640_InitCAM(myCAM);
+	ArduCAM_OV2640_set_JPEG_size(myCAM, OV2640_320x240);
 	// ArduCAM_set_bit(myCAM, ARDUCHIP_TIM, VSYNC_LEVEL_MASK);
 	// ArduCAM_clear_fifo_flag(myCAM);
 	// ArduCAM_write_reg(myCAM, ARDUCHIP_FRAMES, FRAMES_NUM);
-	
-    ArduCAM_clear_fifo_flag(myCAM);
+
+	ArduCAM_clear_fifo_flag(myCAM);
 	vTaskDelay(pdMS_TO_TICKS(1000));
 	ArduCAM_clear_fifo_flag(myCAM);
 	vTaskDelay(pdMS_TO_TICKS(1000));
-	
+
 	if(tcp_server_init(&thread_args->sc) < 0)
 		printf("Error starting sever!!!\n");
 
 	xTaskCreatePinnedToCore(take_image, "take_image", 8192, (void *)&thread_args, tskIDLE_PRIORITY+3, NULL, 1);
-    xTaskCreatePinnedToCore(tcp_server_run, "tcp_server_run", 8192, (void *)thread_args, tskIDLE_PRIORITY+3, NULL, 0);
+	xTaskCreatePinnedToCore(tcp_server_run, "tcp_server_run", 8192, (void *)thread_args, tskIDLE_PRIORITY+3, NULL, 0);
 }

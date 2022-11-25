@@ -240,8 +240,6 @@ void tcp_server_run(void *arg)
 	
 	while(1)
 	{
-		// pthread_mutex_lock(&lock);
-		
 		recvbuff = tcp_server_read(arg);
 		
 		if(recvbuff)
@@ -263,9 +261,5 @@ void tcp_server_run(void *arg)
 		}else{
 			vTaskDelay(pdMS_TO_TICKS(10));
 		}
-		
-		// pthread_cond_signal(&cond);
-		// pthread_cond_wait(&cond, &lock);
-		// pthread_mutex_unlock(&lock);
 	}
 }
