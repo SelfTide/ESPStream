@@ -87,7 +87,7 @@ void OV2640_valid_check()
 void capture_one_frame()
 {
     //printf("start capture\n");
-	ArduCAM_flush_fifo(myCAM);
+    ArduCAM_flush_fifo(myCAM);
     ArduCAM_clear_fifo_flag(myCAM);
     ArduCAM_start_capture(myCAM);
     eclipse_time_ms(false);
