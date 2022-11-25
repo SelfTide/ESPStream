@@ -86,16 +86,16 @@ void OV2640_valid_check()
 
 void capture_one_frame()
 {
-    //printf("start capture\n");
+	//printf("start capture\n");
 	ArduCAM_flush_fifo(myCAM);
-    ArduCAM_clear_fifo_flag(myCAM);
-    ArduCAM_start_capture(myCAM);
-    eclipse_time_ms(false);
+	ArduCAM_clear_fifo_flag(myCAM);
+	ArduCAM_start_capture(myCAM);
+	eclipse_time_ms(false);
 
-    while (!(ArduCAM_get_bit(myCAM, ARDUCHIP_TRIG, CAP_DONE_MASK))) taskYIELD();
-    //		 vTaskDelay(pdMS_TO_TICKS(2));
-    ESP_LOGI(TAG, "capture total_time used (in miliseconds): %lld\n", eclipse_time_ms(true));
-	
+	while (!(ArduCAM_get_bit(myCAM, ARDUCHIP_TRIG, CAP_DONE_MASK))) taskYIELD();
+	//		 vTaskDelay(pdMS_TO_TICKS(2));
+	ESP_LOGI(TAG, "capture total_time used (in miliseconds): %lld\n", eclipse_time_ms(true));
+
 	/*
 	// test to see if this will be quicker -> https://github.com/ArduCAM/Arduino/issues/108
 	// select register bank 1
