@@ -61,7 +61,7 @@ If you are using a different ESP board you might have to change the SDKCONFIG fi
 
 `idf.py menuconfig`
 
-Please check your board and set appropreate resources accordingly
+Please check your board and set appropriate resources accordingly
 
 #### <ins>ESPStream root folder</ins>
 
