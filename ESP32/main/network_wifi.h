@@ -23,8 +23,8 @@
 extern "C" {
 #endif
 
-#define MYSSID "CIA_VAN"
-#define MYPWD "Y0urm0mz!"
+#define MYSSID "(> ` .`)>"
+#define MYPWD "<( ' o ' )>"
 
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
