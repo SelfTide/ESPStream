@@ -24,10 +24,13 @@ extern unsigned long iframeno;
 extern unsigned frames;
 extern volatile int suspended;
 extern bool BUTTON_PRESSED[2];
+extern bool SHOW_MENU;
+
+extern float scale_h, scale_w;
 
 int main()
 {
-	int x, y, a = 0, size = 0;
+	int a = 0, size = 0;
 	int imgWidth, imgHeight;
 	double ThisTime;
 	double LastFPSTime = OGGetAbsoluteTime();
@@ -44,11 +47,11 @@ int main()
 	}
 #endif
 
-	uint32_t *current_image = NULL, *image_buffer = NULL;
+	uint8_t *current_image = NULL, *image_buffer = NULL;
 
 	// Setup our network connection
 	server_con sc;
-	sc = espstream_init( "192.168.0.19", 89);
+	sc = espstream_init( "192.168.0.115", 89);
 	
 	// we need some different permissions ;)
 	int hasperm;
@@ -87,13 +90,6 @@ int main()
 	CNFGSetupFullscreen( "Test Bench", 0 );
 	//CNFGSetup( "Test Bench", 0, 0 );
 
-	for( x = 0; x < HMX; x++ )
-	for( y = 0; y < HMY; y++ )
-	{
-		Heightmap[x+y*HMX] = tdPerlin2D( x, y )*8.;
-	}
-
-
 	const char * assettext = "Not Found";
 	AAsset * file = AAssetManager_open( gapp->activity->assetManager, "asset.txt", AASSET_MODE_BUFFER );
 	if( file )
@@ -115,12 +111,14 @@ int main()
 		{
 			if(!image_buffer)
 			{
-				image_buffer = malloc(size);
+				image_buffer = malloc(size + 10);
+				memset(image_buffer, 0, size + 10);
 			}else{
-				image_buffer = (uint32_t *)realloc(image_buffer, size);
+				image_buffer = (uint8_t *)realloc(image_buffer, size + 10);
+				memset(image_buffer, 0, size + 10);
 			}
-			memcpy((uint8_t *) image_buffer,(uint8_t *) current_image, size);
-			free(current_image);
+			memcpy((uint8_t *)image_buffer, (uint8_t *)current_image, size);
+			// free(current_image);
 		}else{
 			printf("Error espstream_get_image!\n");
 		}
@@ -135,24 +133,38 @@ int main()
 		CNFGClearFrame();
 		CNFGColor( 0xFFFFFFFF );
 		CNFGGetDimensions( &screenx, &screeny );
-
-		CNFGDrawBox(screenx * 0.01, screeny * 0.01, screenx * 0.99, screeny * 0.99);
-
-		if(BUTTON_PRESSED[0])
-		{
-			draw_tophat_control(0);
-		}
-		if(BUTTON_PRESSED[1])
-		{
-			draw_tophat_control(1);
-		}
+		CNFGDialogColor = 0x202020ff;
+		// CNFGDrawBox(screenx * 0.01, screeny * 0.01, screenx * 0.99, screeny * 0.99);
 
 		frames++;
 		//On Android, CNFGSwapBuffers must be called, and CNFGUpdateScreenWithBitmap does not have an implied framebuffer swap.
 		if(image_buffer)
 		{
-			CNFGBlitImage(image_buffer, (screenx/2) - (imgWidth/2), (screeny/2) - (imgHeight/2), imgWidth, imgHeight);
+			scale_h = screeny / imgHeight;
+			scale_w = screenx / imgWidth;
+			CNFGBlitImage((uint32_t *)image_buffer, (screenx / 2) - ((imgWidth * scale_w) / 2), (screeny / 2) - ((imgHeight * scale_h) / 2), imgWidth, imgHeight);
+			// CNFGBlitImage(image_buffer, 0, 0, screenx, screeny);
 		}
+		
+		if(BUTTON_PRESSED[0])
+		{
+			draw_tophat_control(0, &sc);
+		}
+		if(BUTTON_PRESSED[1])
+		{
+			draw_tophat_control(1, &sc);
+		}
+		
+		display_control_data();
+		
+		draw_menu();
+		
+		if(SHOW_MENU)
+			draw_submenu();
+		
+		//CNFGDrawBox((screenx/2) - 150, (screeny/2) - 150, (screenx/2) + 150, (screeny/2) + 150);
+		
+		// CNFGTackRectangle((screenx/2) - 150, (screeny/2) - 150, (screenx/2) + 150, (screeny/2) + 150);
 
 		CNFGSwapBuffers();
 
@@ -175,7 +187,7 @@ int main()
 		
 	}
 
-	espstream_cleanup();
+//	espstream_cleanup();
 
 	return(0);
 }

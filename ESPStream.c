@@ -32,13 +32,13 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define MAXIMAGESIZE 57600
+#define MAXIMAGESIZE 500000
 
 fd_set read_fds, write_fds;
 int current_size = 0, incoming_size = 0, incoming_pos = 0, maxfds = 2;
 
 video_stream_packet_state vsps;
-uint32_t *image_data;
+uint8_t *image_data;
 
 int build_fd_sets(int socket, fd_set *read_fds, fd_set *write_fds)
 {
@@ -89,7 +89,6 @@ int connect_serv (server_con *sc)
 		
 	}else{
 
-
 		//Connect to remote server
 		if (connect(sc->s , (struct sockaddr *)&sc->server , sizeof(sc->server)) < 0)
 		{
@@ -127,8 +126,8 @@ server_con espstream_init(char *ip_address, uint8_t port)
 {
 	vsps.start_image = false, vsps.data_image = false, vsps.end_image = false;
 	vsps.image_size = 0;
-	image_data = (uint32_t *)malloc( sizeof(uint32_t ) * MAXIMAGESIZE);
-	memset(image_data, 0, sizeof(uint32_t ) * MAXIMAGESIZE);
+	image_data = (uint8_t *)malloc( sizeof(uint8_t ) * MAXIMAGESIZE);
+	memset(image_data, 0, sizeof(uint8_t ) * MAXIMAGESIZE);
 	
 	server_con sc;
 	memset(sc.ip, 0, 16);
@@ -145,10 +144,10 @@ server_con espstream_init(char *ip_address, uint8_t port)
 }
 
 // returns image data from stream or NULL on error, width, height, and size are passed in to be populated.
-uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int *size)
+uint8_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int *size)
 {
 	int n, action;
-	uint32_t *image_buffer, *current_image = NULL;
+	uint8_t *image_buffer, *current_image = NULL;
 	
 	
 	// net code
@@ -161,153 +160,142 @@ uint32_t *espstream_get_image(server_con *sc, int *imgWidth, int *imgHeight, int
 			printf("Connected to video stream server.\n"); // 0: video stream connection 1: control stream
 			send(sc->s, "start", 5, MSG_DONTWAIT);
 			sc->connected = true;
-		
 		}else{
 			
 			printf("Failed to connect to video stream server.\n");
 			sc->connected = false;
-		
+			return NULL;
 		}
 		
-	}else{
+	}
 		
-		if(sc->connected)
+	//printf("Listening...\n");
+	
+	// listen for incoming data
+	build_fd_sets(sc->s, &read_fds, NULL);
+	
+	action = select(FD_SETSIZE, &read_fds, NULL, NULL, &sc->tv);
+
+	if(action == -1)
+	{
+		printf("Error in select()\n");
+		return NULL;
+	}else if(action > 0){
+		printf("We got data!\n");
+	}else if(action == 0){
+		// timed out
+		printf("No data yet...\n");
+		return NULL;
+	}
+
+	if(FD_ISSET(sc->s, &read_fds))	// got data on video connection
+	{
+		memset((void *)&vsps, 0, sizeof( video_stream_packet_state));
+		if((action = read(sc->s, &vsps, sizeof( video_stream_packet_state))) > 0)
 		{
+			printf("Size of recv: %d %d\n", action, (int )sizeof( video_stream_packet_state));
 			
-			//printf("Listening...\n");
-			
-			// listen for incoming data
-			build_fd_sets(sc->s, &read_fds, NULL);
-			
-			action = select(FD_SETSIZE, &read_fds, NULL, NULL, &sc->tv);
-
-			if(action == -1)
+			if(vsps.end_image)	// are we done with image?
 			{
-				printf("Error in select()\n");
-				return NULL;
-			}else if(action){
-				printf("We got data!\n");
-			}else{
-				printf("No data yet...\n");
+
+				/*	Test image write code - just leaving this here for debug reasons
+				FILE *image_file;
+				
+				image_file = fopen("/data/data/org.yourorg.ESPStream/testimage.jpg", "w+b");
+				if(image_file)
+				{
+					
+					if(fwrite(image_data, current_size * 4, 1, image_file))
+					{
+						printf("Wrote to image file.\n");
+					}else{
+						printf("Failed to write to image file!\n");
+					}
+					
+					int size;
+					
+					fseek(image_file, 0, SEEK_END);
+					size = ftell(image_file);
+					
+					if(fread(image_data, 1, size, image_file) != size)
+						printf("failed to read image file!\n");
+					
+				}else{
+					printf("Failed to create file!\n");
+					perror("testimage.jpg");
+				}
+				*/
+				
+				if(!stbi_info_from_memory((stbi_uc	const *)image_data, current_size * sizeof(uint8_t), imgWidth, imgHeight, &n))
+				{
+					printf("Failed to fetch image info! %s\n", stbi_failure_reason());
+					return NULL;
+				}
+				
+				int comp;
+				
+				stbi_set_flip_vertically_on_load(false);
+				printf("Comp level: %d\n", n);
+				
+				image_buffer = (uint8_t *)stbi_load_from_memory((stbi_uc	const *)image_data, current_size * sizeof(uint8_t), imgWidth, imgHeight, &comp, 4);
+				
+				if(image_buffer == NULL)
+				{
+					printf("Failed to load image! %s\n", stbi_failure_reason());
+					return NULL;
+				}
+				// if(stbi_write_bmp("/data/data/org.yourorg.Drone_control/Myimage.bmp", imgWidth, imgHeight, 4, image_buffer) == 0)
+				//	 printf("Failed to write Bitmap file! %s\n", stbi_failure_reason());
+				
+				custom_stbi_mem_context context;
+				context.last_pos = 0;
+				context.context = (void *)image_data;
+				memset(image_data, 0, sizeof(uint8_t ) * MAXIMAGESIZE);
+				
+				if(stbi_write_bmp_to_func((stbi_write_func *)write2memory, &context, *imgWidth, *imgHeight, 4, image_buffer) <= 0)
+				{
+					printf("Failed to write image to memory! %s\n", stbi_failure_reason());
+					return NULL;
+				}
+		
+				printf("Wrote image to memory...\n");
+				current_size = (context.last_pos / sizeof(uint8_t)) - 140; // this is supposed to compinsate for junk data
+			
+				if(current_image == NULL)
+				{
+					current_image = (uint8_t *)malloc(sizeof(uint8_t) * (current_size + 10));
+					memset(current_image, 0, sizeof(uint8_t) * (current_size + 10));
+					memcpy(current_image, &image_data[140], sizeof(uint8_t) * current_size); // start where junk data ends?
+					*size = sizeof(uint8_t) * current_size; // number of bytes
+				}
+					
+				free(image_buffer);
+				
+				incoming_size = 0;
+				
+				//memset(image_data, 0, sizeof(uint32_t) * MAXIMAGESIZE);
+				printf("finished image...\n");
 			}
-
-			if(action > 0)
+				
+			if(vsps.start_image)	// start new image incoming?
 			{
-
+				printf("Starting new image... size: %d\n", vsps.image_size);
+				current_size = vsps.image_size / sizeof(uint8_t);
+				
+				memset(image_data, 0, sizeof(uint8_t ) * MAXIMAGESIZE);		
+			}
+			
+			if(vsps.data_image)	// is this image data?
+			{
+				printf("Getting image data...\n");
 				if(FD_ISSET(sc->s, &read_fds))	// got data on video connection
 				{
-					memset((void *)&vsps, 0, sizeof( video_stream_packet_state));
-					if((action = read(sc->s, &vsps, sizeof( video_stream_packet_state))) > 0)
+					if((action = recv(sc->s, image_data, current_size, MSG_WAITALL)) < 0) // recive image data
 					{
-						printf("Size of recv: %d %d\n", action, (int )sizeof( video_stream_packet_state));
-						
-						if(vsps.end_image)	// are we done with image?
-						{
-
-							/*	Test image write code - just leaving this here for debug reasons
-							FILE *image_file;
-							
-							image_file = fopen("/data/data/org.yourorg.ESPStream/testimage.jpg", "w+b");
-							if(image_file)
-							{
-								
-								if(fwrite(image_data, current_size * 4, 1, image_file))
-								{
-									printf("Wrote to image file.\n");
-								}else{
-									printf("Failed to write to image file!\n");
-								}
-								
-								int size;
-								
-								fseek(image_file, 0, SEEK_END);
-								size = ftell(image_file);
-								
-								if(fread(image_data, 1, size, image_file) != size)
-									printf("failed to read image file!\n");
-								
-							}else{
-								printf("Failed to create file!\n");
-								perror("testimage.jpg");
-							}
-							*/
-							
-							if(stbi_info_from_memory((stbi_uc	const *)image_data, current_size * 4, imgWidth, imgHeight, &n))
-							{
-								int comp;
-								
-								stbi_set_flip_vertically_on_load(true);
-								printf("Comp level: %d\n", n);
-								
-								image_buffer = (uint32_t *)stbi_load_from_memory((stbi_uc	const *)image_data, current_size * 4, imgWidth, imgHeight, &comp, 4);
-								
-								if(image_buffer != NULL)
-								{
-									// if(stbi_write_bmp("/data/data/org.yourorg.Drone_control/Myimage.bmp", imgWidth, imgHeight, 4, image_buffer) == 0)
-									//	 printf("Failed to write Bitmap file! %s\n", stbi_failure_reason());
-									
-									custom_stbi_mem_context context;
-									context.last_pos = 0;
-									context.context = (void *)image_data;
-									memset(image_data, 0, sizeof(uint32_t ) * MAXIMAGESIZE);
-									
-									if(stbi_write_bmp_to_func((stbi_write_func *)write2memory, &context, *imgWidth, *imgHeight, 4, image_buffer) > 0)
-									{
-							
-										printf("Wrote image to memory...\n");
-										current_size = (context.last_pos / sizeof(uint32_t)) - 35; // this is supposed to compinsate for junk data
-								
-										if(current_image == NULL)
-										{
-											current_image = (uint32_t *)malloc(sizeof(uint32_t) * current_size);
-											memset(current_image, 0, sizeof(uint32_t) * current_size);
-											memcpy(current_image, &image_data[35], sizeof(uint32_t) * current_size); // start where junk data ends?
-											*size = sizeof(uint32_t) * current_size; // number of bytes
-										}
-									}else{
-										printf("Failed to write image to memory! %s\n", stbi_failure_reason());
-										return NULL;
-									}
-									
-								}else{
-									printf("Failed to load image! %s\n", stbi_failure_reason());
-									return NULL;
-								}
-								
-								free(image_buffer);
-								
-							}else{
-								printf("Failed to fetch image info! %s\n", stbi_failure_reason());
-							}
-							
-							incoming_size = 0;
-							
-							//memset(image_data, 0, sizeof(uint32_t) * MAXIMAGESIZE);
-							printf("finished image...\n");
-						}
-							
-						if(vsps.start_image)	// start new image incoming?
-						{
-							printf("Starting new image... size: %d\n", vsps.image_size);
-							current_size = vsps.image_size / 4;
-							
-							memset(image_data, 0, sizeof(uint32_t ) * MAXIMAGESIZE);		
-						}
-						
-						if(vsps.data_image)	// is this image data?
-						{
-							printf("Getting image data...\n");
-							if(FD_ISSET(sc->s, &read_fds))	// got data on video connection
-							{
-								if((action = recv(sc->s, image_data, current_size * 4, MSG_WAITALL)) < 0) // recive image data
-								{
-									printf("Error reciving image_data...\n");
-									return NULL;
-								}else{
-									printf("Recived image data! expected size: %d recived Size: %d\n", current_size * 4, action);
-								}
-							}
-						}
+						printf("Error reciving image_data...\n");
+						return NULL;
+					}else{
+						printf("Recived image data! expected size: %d recived Size: %d\n", current_size, action);
 					}
 				}
 			}

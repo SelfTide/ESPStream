@@ -12,6 +12,7 @@
 #include <android_native_app_glue.h>
 #include <android/sensor.h>
 #include "CNFGAndroid.h"
+#include "ESPStream.h"
 
 #define GL_BGRA_EXT                       0x80E1
 #define GL_BGRA8_EXT                      0x93A1
@@ -25,12 +26,13 @@ typedef struct point {
 }Point;
 
 typedef struct {
-
-	float roll;
-	float pitch;
-	float throttle;
-
+	double roll;
+	double pitch;
+	double yaw;
+	double throttle;
 }Control_data;
+
+Control_data controller;
 
 typedef union {
 
@@ -56,7 +58,7 @@ float find_hyp_distance(float x, float y);
 
 void HandleKey( int keycode, int bDown );
 
-void draw_tophat_control( int cn );
+void draw_tophat_control(int cn, server_con *sc);
 
 void HandleButton( int x, int y, int button, int bDown );
 
@@ -67,5 +69,11 @@ void HandleDestroy();
 void HandleSuspend();
 
 void HandleResume();
+
+void draw_menu();
+
+void draw_submenu();
+
+void display_control_data(void);
 
 #endif
